@@ -54,7 +54,7 @@ const server = createServer(async (request, response) => {
   }
 
   const errorLog = body.error_log;
-  console.log(`Received error log: ${errorLog}\ncalling agent to fix it :)`);
+  console.log(`\n-> Received error log: ${errorLog}\n\n\-> Calling the slave to fix it! :)\n\n`);
 
   
   // Run Agent
@@ -65,9 +65,6 @@ const server = createServer(async (request, response) => {
     .catch((error) => {
       console.error("Agent failed:", error);
     });
-  
-
-  // Logs agent's edits to the user
 
 
   // Asks user to push to production
