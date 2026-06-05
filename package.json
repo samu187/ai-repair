@@ -1,0 +1,29 @@
+{
+  "name": "ai-repair",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local AI repair agent entry server for receiving production error logs.",
+  "type": "module",
+  "bin": {
+    "ai-repair": "dist/server.js"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0"
+  },
+  "dependencies": {
+    "@openai/agents": "^0.11.6",
+    "zod": "^4.4.3"
+  }
+}
