@@ -5,7 +5,6 @@ import { runAgent } from "./agent.js";
 import { chooseTargetDir } from "./config.js";
 import { setTargetDir } from "./tools/paths.js";
 
-
 const DEFAULT_PORT = 4545;
 const DEFAULT_HOST = "127.0.0.1";
 
@@ -16,6 +15,40 @@ const targetDir = await chooseTargetDir();
 setTargetDir(targetDir);
 console.log(`Agent target application: ${targetDir}`);
 
+type AgentReport = Awaited<ReturnType<typeof runAgent>>["report"];
+
+function formatAgentReport(report: AgentReport): string {
+  const filesChanged = report.filesChanged.length > 0
+    ? report.filesChanged.join(", ")
+    : "none";
+  const tests = report.testResults.length > 0
+    ? report.testResults.map(formatTestResult).join(" - ")
+    : report.testsStatus;
+  const gitDiff = report.gitDiff ?? report.gitDiffError ?? "No git diff.";
+
+  return [
+    "",
+    "Agent report",
+    `status : ${report.status}`,
+    `summary : ${formatSingleLine(report.summary)}`,
+    `files changed -> ${filesChanged}`,
+    `tests -> ${tests}`,
+    "git diff :",
+    gitDiff.trimEnd()
+  ].join("\n");
+}
+
+function formatTestResult(testResult: AgentReport["testResults"][number]): string {
+  return `${formatTestCommand(testResult.command)} ${testResult.passed ? "OK" : "ERROR"}`;
+}
+
+function formatTestCommand(command: string): string {
+  return command.replace(/^npm run /, "npm ");
+}
+
+function formatSingleLine(value: string): string {
+  return value.trim().replace(/\s+/g, " ") || "none";
+}
 
 const server = createServer(async (request, response) => {
   if (request.method !== "POST") {
@@ -54,13 +87,13 @@ const server = createServer(async (request, response) => {
   }
 
   const errorLog = body.error_log;
-  console.log(`\n-> Received error log: ${errorLog}\n\n\-> Calling the slave to fix it! :)\n\n`);
+  console.log(`\n-> Received error log: ${errorLog}\n\n\-> Calling the slave to fix it! :)\n`);
 
   
   // Run Agent
   runAgent(errorLog)
     .then((result) => {
-      console.log("Agent report:", JSON.stringify(result.report, null, 2));
+      console.log(formatAgentReport(result.report));
     })
     .catch((error) => {
       console.error("Agent failed:", error);
