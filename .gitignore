@@ -1,6 +1,5 @@
 node_modules/
 dist/
-test-error/
 .env
 .DS_Store
 npm-debug.log*
