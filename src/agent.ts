@@ -1,4 +1,5 @@
-import { Agent, run } from "@openai/agents";
+import { Agent, OpenAIProvider, Runner } from "@openai/agents";
+import { writeFile } from "node:fs/promises";
 import { editFileTool } from "./tools/editFile.js";
 import { collectGitDiff, gitDiffTool } from "./tools/gitDiff.js";
 import { readFileTool } from "./tools/readFile.js";
@@ -39,9 +40,21 @@ type AgentReport = {
 };
 
 // Agent setup
+// Edit below if want to use OpenAI API instead
+const runner = new Runner({
+  modelProvider: new OpenAIProvider({
+    baseURL: "http://127.0.0.1:11434/v1",
+    apiKey: "ollama",
+    useResponses: false
+  }),
+  tracingDisabled: true
+});
+
+
 const repairAgent = new Agent({
   name: "Repair Agent",
-  model: "gpt-5.4-mini",
+  model: "qwen3.6",
+  modelSettings: { providerData: { think: false } },
   instructions: `
 You are a focused local repair agent.
 You are not a general chat assistant.
@@ -51,16 +64,11 @@ Use edit_file only after reading the target file.
 When using edit_file, oldText must be an exact unique block from the file.
 Use test to verify changes.
 Use git_diff after making changes.
-Return a concise summary of:
-1. what the error seems to be
-2. which files you inspected
-3. what you changed, if anything
-4. what the test tool returned
-5. whether the issue is ready for human review
-
-Do not claim the bug is fixed unless tests passed.
-Never say production can be deployed.
 If you change files, you must call test and git_diff before finishing.
+Return a short concise summary of:
+1. what the error seems to be
+2. what you changed, if anything
+3. Whether the issue is fixed and tests passed (do not claim the bug is fixed unless tests passed).
 `,
   tools: [searchFilesTool, readFileTool, editFileTool, testTool, gitDiffTool]
 });
@@ -84,7 +92,7 @@ export async function runAgent(errorLog: string): Promise<AgentResult> {
   };
 
   try {
-    const result = await run(
+    const result = await runner.run(
       repairAgent,
       `Error log received:\n\n${errorLog}`,
       {
@@ -94,6 +102,10 @@ export async function runAgent(errorLog: string): Promise<AgentResult> {
     );
 
     state.finalOutput = String(result.finalOutput ?? "");
+    await writeFile(
+      "agent-result.json",
+      JSON.stringify(result, null, 2)
+    );
 
     if (state.filesChanged.length > 0 && state.testsStatus === "not_run") {
       await runStandardTests(state);

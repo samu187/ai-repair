@@ -5,6 +5,8 @@ import { runAgent } from "./agent.js";
 import { chooseTargetDir } from "./config.js";
 import { setTargetDir } from "./tools/paths.js";
 
+console.clear();
+
 const DEFAULT_PORT = 4545;
 const DEFAULT_HOST = "127.0.0.1";
 
