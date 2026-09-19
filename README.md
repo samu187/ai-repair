@@ -9,6 +9,8 @@ A small experiment in using an AI agent to handle the first pass of debugging. I
 - Replaces exact text blocks to keep edits focused.
 - Handles one repair at a time and leaves review, verification, and deployment to you.
 
+![AI Repair demo recording](docs/screenshots/demo.gif)
+
 ![AI Repair demo](docs/screenshots/demo.png)
 
 Built for local use with trusted repositories. Changes are applied directly to your working copy and aren't automatically tested. Error logs and code read by the agent are sent to OpenAI.
