@@ -21,7 +21,7 @@ export const searchFilesTool = tool<typeof searchFilesSchema, AgentState>({
     try {
       const { stdout } = await execFileAsync(
         "rg",
-        ["--line-number", "--glob", "!node_modules", "--glob", "!dist", query, "."],
+        ["--line-number", "--glob", "!node_modules", "--glob", "!dist", "--", query, "."],
         {
           cwd: getTargetDir(),
           maxBuffer: 200_000

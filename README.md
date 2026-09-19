@@ -1,95 +1,58 @@
 # AI Repair
 
-Simple TypeScript server that receives an error log from your app.
+**Send an error log. Get a proposed code fix.**
 
-The server accepts a JSON `error_log` field, sends it to a local repair agent, and keeps production deployment as a human decision.
+A small experiment in using an AI agent to handle the first pass of debugging. It searches your project, reads the relevant files, makes targeted edits, and prints a summary with a Git diff for you to review.
 
-When the server starts, it asks where your application directory is. The agent uses that directory for reading files, writing files, running tests, and collecting git diff.
+- Accepts error logs through a simple HTTP endpoint.
+- Uses OpenAI to investigate the code and suggest a repair by editing local files.
+- Replaces exact text blocks to keep edits focused.
+- Handles one repair at a time and leaves review, verification, and deployment to you.
 
-## Agent Flow
+Built for local use with trusted repositories. Changes are applied directly to your working copy and aren't automatically tested. Error logs and code read by the agent are sent to OpenAI.
 
-```txt
-POST error_log
-  -> agent inspects target app
-  -> agent edits exact text blocks only
-  -> agent runs test
-  -> agent collects git diff
-  -> server prints report for human review
-```
+## Tech stack
 
-The agent cannot push or deploy.
+- **TypeScript + Node.js** — server and file tools
+- **OpenAI Agents SDK + GPT-4.1** — agent loop and tool calling
+- **Zod** — tool input validation
+- **ripgrep + Git** — code search and change review
 
-## Request
+## Setup
 
-Send a `POST` request to:
-
-```txt
-http://localhost:4545
-```
-
-With JSON like:
-
-```json
-{
-  "error_log": "TypeError: Cannot read properties of undefined"
-}
-```
-
-If the request is not `POST`, has invalid JSON, or does not include `error_log`, the server returns an error response.
-
-## Scripts
-
-Install dependencies:
+You'll need Node.js 22+, Git, ripgrep (`rg`), and an OpenAI API key.
 
 ```sh
 npm install
-```
-
-Set your OpenAI API key:
-
-```sh
 export OPENAI_API_KEY="your_api_key_here"
-```
-
-Run in development:
-
-```sh
 npm run dev
 ```
 
-By default, the server listens on `127.0.0.1:4545`. You can change this with `HOST` and `PORT`.
+Choose your application's directory when prompted. Use a local Git checkout with a clean working tree so the diff is easy to review. The server listens at `http://127.0.0.1:4545` by default.
 
-Build:
-
-```sh
-npm run build
-```
-
-Run compiled server:
+Send an error log from another terminal:
 
 ```sh
-npm start
-```
-
-Run as a local command after building:
-
-```sh
-npm link
-ai-repair
-```
-
-## Test With Curl
-
-```sh
-curl -X POST http://localhost:4545 \
+curl http://127.0.0.1:4545 \
   -H "Content-Type: application/json" \
-  -d '{"error_log":"Example error stack"}'
+  -d '{"error_log":"TypeError: Cannot read properties of undefined at src/app.ts:42"}'
 ```
 
-Expected response:
+The endpoint returns `{"ok":true}` when the repair starts. The summary and diff appear in the server terminal when it finishes.
 
-```json
-{
-  "ok": true
-}
+For a compiled build, run `npm run build`, then `npm start`. Set `PORT` to change the listening port.
+
+## Project structure
+
+```text
+src/
+├── server.ts          # HTTP endpoint and terminal report
+├── agent.ts           # OpenAI agent, instructions, and run state
+├── config.ts          # Choose and remember the target directory
+└── tools/
+    ├── searchFiles.ts  # Search source code with ripgrep
+    ├── readFile.ts     # Read a project file
+    ├── editFile.ts     # Replace an exact text block
+    ├── gitDiff.ts      # Collect changes for review
+    └── paths.ts        # Keep file access inside the target directory
 ```

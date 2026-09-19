@@ -27,7 +27,7 @@ export const editFileTool = tool<typeof editFileSchema, AgentState>({
       return "Edit failed: oldText appears more than once. Use a larger unique block.";
     }
 
-    await writeFile(safePath, content.replace(input.oldText, input.newText), "utf8");
+    await writeFile(safePath, content.replace(input.oldText, () => input.newText), "utf8");
 
     if (context && !context.context.filesChanged.includes(input.path)) {
       context.context.filesChanged.push(input.path);
