@@ -15,6 +15,10 @@ export async function chooseTargetDir(): Promise<string> {
   const savedConfig = await readSavedConfig();
   const cwd = process.cwd();
   const rl = readline.createInterface({ input, output });
+  rl.on("SIGINT", () => {
+    rl.close();
+    process.exit(130);
+  });
 
   try {
     if (savedConfig.targetDir && existsSync(savedConfig.targetDir)) {

@@ -30,6 +30,8 @@ npm run dev
 
 Choose your application's directory when prompted. Use a local Git checkout with a clean working tree so the diff is easy to review. The server listens at `http://127.0.0.1:4545` by default.
 
+`npm run dev` runs without a file watcher so the interactive prompts work normally. Press Ctrl+C to stop it; restart it manually after changing the server code.
+
 Send an error log from another terminal:
 
 ```sh
@@ -41,6 +43,35 @@ curl http://127.0.0.1:4545 \
 The endpoint returns `{"ok":true}` when the repair starts. The summary and diff appear in the server terminal when it finishes.
 
 For a compiled build, run `npm run build`, then `npm start`. Set `PORT` to change the listening port.
+
+### Try the included demo
+
+`sample-error-app` is a tiny TypeScript app that prints order summaries. One order has no customer, and the app crashes when it tries to read their name. Its entry point catches the error and sends the stack trace to AI Repair.
+
+**Terminal 1 — start AI Repair** from the repository root:
+
+```sh
+export OPENAI_API_KEY="your_api_key_here"
+npm run dev
+```
+
+If asked to reuse a saved directory, answer `n`. Choose **2. Another directory** and enter `./sample-error-app`. Wait for the server to start listening.
+
+**Terminal 2 — run the sample**, also from the repository root:
+
+```sh
+npm run demo
+```
+
+It prints the first order, crashes on the guest order, and forwards the error to port `4545`. The sample exits with an error code because the app failed; the repair continues in Terminal 1. If you changed `PORT`, use the same value in both terminals.
+
+Watch Terminal 1 as the agent investigates. When its report appears, review the changes in `sample-error-app/src/app.ts`, then run `npm run demo` again. A successful repair prints both orders, using `Guest` for the missing customer, followed by `All orders processed successfully.` The sample shares the root project's dependencies, so no second install is needed.
+
+To repeat the demo, restore the deliberately broken line in `sample-error-app/src/app.ts`:
+
+```ts
+const customerName = order.customer!.name;
+```
 
 ## Project structure
 
@@ -55,4 +86,9 @@ src/
     ├── editFile.ts     # Replace an exact text block
     ├── gitDiff.ts      # Collect changes for review
     └── paths.ts        # Keep file access inside the target directory
+sample-error-app/
+├── src/
+│   ├── index.ts        # Catch errors and forward them to AI Repair
+│   └── app.ts          # Order summaries with a deliberate runtime bug
+└── tsconfig.json
 ```
